@@ -1,8 +1,21 @@
 1. Μια σύντομη και περιεκτική εξήγηση για τις επιλογές που έχετε κάνει στο σχεδιασμό του προγράμματος
 σας (2-3 σελίδες σε ASCII κείμενο είναι αρκετές).
 
-exec*(), mkfifo(), pipe(), open(), close(), read(), write(),
-wait(), waitpid(), poll(), select(), dup(), dup2(), kill() και exit().
+exec*() =
+mkfifo() =
+pipe() = 
+open() = 
+close() =
+read() = 
+write() =
+wait() =
+waitpid() = 
+poll() = 
+select() = 
+dup() = for duplicating file descriptors (stdin, stdout, stderror)
+dup2() = 
+kill() = sends signal to a process to end it or do something else
+exit() = terminates program
 
 Σε αυτές τις «χρήσιμες»
 λέξεις ΔΕΝ περιλαμβάνονται οι λέξεις του exclusion list που παρέχονται σε ένα αρχείο με την μορφή in-line
