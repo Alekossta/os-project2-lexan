@@ -1,0 +1,21 @@
+# Ignore object files and binary
+obj/
+bin/
+
+# Ignore executables
+lexan
+
+# Ignore Valgrind logs
+valgrind.log
+
+# Ignore editor/IDE specific files
+*.swp
+*.swo
+*.vscode/
+*.idea/
+*.DS_Store
+
+# Ignore temporary files
+*.tmp
+*.bak
+*~
