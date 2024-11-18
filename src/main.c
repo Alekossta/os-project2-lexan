@@ -1,7 +1,9 @@
 #include "stdio.h"
+#include "../include/ConsoleReader.h"
 
-int main()
+int main(int argumentsCount, char* arguments[])
 {
-    printf("Hello World\n");
+    ConsoleArguments consoleArguments = readConsole(argumentsCount, arguments);
+    printf("%s\n", consoleArguments.inputFileName);
     return 0;
 }
