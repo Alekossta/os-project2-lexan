@@ -1,50 +1,51 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Iinclude
-LDFLAGS =
+CFLAGS = -Wall -Wextra -g
 
 # Directories
 SRC_DIR = src
-INC_DIR = include
 OBJ_DIR = obj
 BIN_DIR = bin
 
-# Target executable
-TARGET = $(BIN_DIR)/lexan
+# Source files
+SOURCES = $(wildcard $(SRC_DIR)/*.c)
+OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SOURCES))
 
-# Source and object files
-SRCS = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
+# Binaries
+LEXAN = $(BIN_DIR)/lexan
+BUILDER = $(BIN_DIR)/builder
+SPLITTER = $(BIN_DIR)/splitter
 
-# Default rule
-all: $(TARGET)
+# Default target
+all: $(LEXAN) $(BUILDER) $(SPLITTER)
 
-# Build target executable
-$(TARGET): $(OBJS) | $(BIN_DIR)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+# Build lexan binary
+$(LEXAN): $(OBJ_DIR)/lexan.o $(OBJ_DIR)/ConsoleReader.o
+	$(CC) $(CFLAGS) $^ -o $@
 
-# Compile source files to object files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c -o $@ $<
+# Build builder binary
+$(BUILDER): $(OBJ_DIR)/builder.o
+	$(CC) $(CFLAGS) $^ -o $@
 
-# Run the program
-run: $(TARGET)
-	./$(TARGET)
+# Build splitter binary
+$(SPLITTER): $(OBJ_DIR)/splitter.o
+	$(CC) $(CFLAGS) $^ -o $@
 
-# Run with Valgrind
-valgrind: $(TARGET)
-	valgrind --leak-check=full ./$(TARGET)
-
-# Clean up object files and the target
-clean:
-	rm -rf $(OBJ_DIR)/*.o $(TARGET)
-
-# Create necessary directories
-$(OBJ_DIR):
+# Compile object files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
+# Clean up
+clean:
+	rm -rf $(OBJ_DIR) $(BIN_DIR)
+
+# Create bin directory
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-# Phony targets
-.PHONY: all run valgrind clean
+# Run lexan binary
+run-lexan: $(LEXAN)
+	@$(LEXAN) -i ./data/texts/GreatExpectations_a.txt -l 50 -m 50 -t 5 -e ./data/exclusionLists/ExclusionList1_a.txt -o output.txt
+
+.PHONY: all clean run-lexan
