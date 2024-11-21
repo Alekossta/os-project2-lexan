@@ -1,7 +1,7 @@
 #include "stdio.h"
 
-int main()
+int main(int argumentsCount, char* arguments[])
 {
-    printf("hello from splitter\n");
+    printf("Hello from splitter\n");
     return 0;
 }
