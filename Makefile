@@ -1,51 +1,54 @@
-# Compiler and flags
-CC = gcc
-CFLAGS = -Wall -Wextra -g
-
 # Directories
+BIN_DIR = bin
+DATA_DIR = data
+INCLUDE_DIR = include
 SRC_DIR = src
 OBJ_DIR = obj
-BIN_DIR = bin
 
-# Source files
-SOURCES = $(wildcard $(SRC_DIR)/*.c)
-OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SOURCES))
+# Compiler and Flags
+CC = gcc
+CFLAGS = -Wall -I$(INCLUDE_DIR)
 
-# Binaries
-LEXAN = $(BIN_DIR)/lexan
-BUILDER = $(BIN_DIR)/builder
-SPLITTER = $(BIN_DIR)/splitter
+# Source Files
+MAIN_FILES = lexan.c splitter.c builder.c
+COMMON_SRCS = $(filter-out $(addprefix $(SRC_DIR)/, $(MAIN_FILES)), $(wildcard $(SRC_DIR)/*.c))
 
-# Default target
-all: $(LEXAN) $(BUILDER) $(SPLITTER)
+LEXAN_SRCS = $(SRC_DIR)/lexan.c $(COMMON_SRCS)
+SPLITTER_SRCS = $(SRC_DIR)/splitter.c $(COMMON_SRCS)
+BUILDER_SRCS = $(SRC_DIR)/builder.c $(COMMON_SRCS)
 
-# Build lexan binary
-$(LEXAN): $(OBJ_DIR)/lexan.o $(OBJ_DIR)/ConsoleReader.o
-	$(CC) $(CFLAGS) $^ -o $@
+# Object Files
+LEXAN_OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(LEXAN_SRCS))
+SPLITTER_OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SPLITTER_SRCS))
+BUILDER_OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(BUILDER_SRCS))
 
-# Build builder binary
-$(BUILDER): $(OBJ_DIR)/builder.o
-	$(CC) $(CFLAGS) $^ -o $@
+# Default Target
+all: $(BIN_DIR)/lexan $(BIN_DIR)/splitter $(BIN_DIR)/builder
 
-# Build splitter binary
-$(SPLITTER): $(OBJ_DIR)/splitter.o
-	$(CC) $(CFLAGS) $^ -o $@
+# Build Executables
+$(BIN_DIR)/lexan: $(LEXAN_OBJS) | $(BIN_DIR)
+	$(CC) -o $@ $^
 
-# Compile object files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(OBJ_DIR)
+$(BIN_DIR)/splitter: $(SPLITTER_OBJS) | $(BIN_DIR)
+	$(CC) -o $@ $^
+
+$(BIN_DIR)/builder: $(BUILDER_OBJS) | $(BIN_DIR)
+	$(CC) -o $@ $^
+
+# Compile Object Files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean up
+# Ensure Directories Exist
+$(BIN_DIR) $(OBJ_DIR):
+	mkdir -p $@
+
+# Phony Targets
+.PHONY: all clean
+
+# Clean Build Files
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/*
 
-# Create bin directory
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
-
-# Run lexan binary
-run-lexan: $(LEXAN)
-	@$(LEXAN) -i ./data/texts/GreatExpectations_a.txt -l 50 -m 50 -t 5 -e ./data/exclusionLists/ExclusionList1_a.txt -o output.txt
-
-.PHONY: all clean run-lexan
+run: $(BIN_DIR)/lexan
+	$(BIN_DIR)/lexan -i $(DATA_DIR)/texts/GreatExpectations_a.txt -l 50 -m 50 -t 5 -e $(DATA_DIR)/exclusionLists/ExclusionList1_a.txt -o output.txt

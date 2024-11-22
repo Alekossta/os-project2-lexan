@@ -1,4 +1,4 @@
-./lexan -i ./data/texts/GreatExpectations_a.txt -l 50 -m 50 -t 5 -e ./data/exclusionLists/exclusionList1_a.txt -o output.txt
+./lexan -i ./data/texts/GreatExpectations_a.txt -l 50 -m 50 -t 5 -e ./data/exclusionLists/ExclusionList1_a.txt -o output.txt
 
 exec*()
 mkfifo()

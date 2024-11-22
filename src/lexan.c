@@ -3,16 +3,17 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "../include/ConsoleReader.h"
+#include "../include/Utility.h"
 
 int main(int argumentsCount, char* arguments[])
 {
     ConsoleArguments consoleArguments = readConsole(argumentsCount, arguments);
 
     // input file
+    int numberOfLines = 0;
     FILE* inputFile = fopen(consoleArguments.inputFileName, "r");
     if(inputFile)
     {
-        int numberOfLines = 0;
         char character;
         while((character = fgetc(inputFile)) != EOF)
         {
@@ -20,41 +21,43 @@ int main(int argumentsCount, char* arguments[])
             {
                 numberOfLines++;
             }
-        }
-        printf("Number of lines is %d\n", numberOfLines);
+        }        
     }
     else
     {
         printf("Error opening input file\n");
         return -1;
     }
+    
     fclose(inputFile);
-
-    // exclusion file
-    FILE* exclusionFile = fopen(consoleArguments.exclusionListFileName, "r");
-    if(exclusionFile)
-    {
-        
-    }
-    else
-    {
-        printf("Error opening exclusion file\n");
-        return -1;
-    }
-    fclose(exclusionFile);
 
     unsigned USR1 = 0;
     // spawn splitters
     int numberOfSplitters = consoleArguments.numOfSplitters;
+    int numberOfLinesEachSplitter = numberOfLines / numberOfSplitters;
+    int startingLine = 1;
     for(int i = 0; i < numberOfSplitters; i++)
     {
         pid_t pid = fork();
         if(pid == 0)
         {
-            char* arguments[] = {"./bin/splitter",NULL};
+            char numberOfLinesEachSplitterString[20]; // Large enough for most integers
+            sprintf(numberOfLinesEachSplitterString, "%d", numberOfLinesEachSplitter);
+
+            char startingLineString[20];
+            sprintf(startingLineString, "%d", startingLine);
+
+            char* arguments[] = {"./bin/splitter", consoleArguments.inputFileName
+            ,numberOfLinesEachSplitterString, startingLineString, consoleArguments.exclusionListFileName
+            ,NULL};
+
             execv(arguments[0], arguments);
             perror("did not create splitter\n");
             return -1;
+        }
+        else // we are on parent
+        {
+            startingLine += numberOfLinesEachSplitter;
         }
     }
 
@@ -87,19 +90,6 @@ int main(int argumentsCount, char* arguments[])
 
     printf("USR1 signals: %d\n", USR1);
     printf("USR2 signals: %d\n", USR2);
-
-    // output file
-    FILE* outputFile = fopen(consoleArguments.outputFileName, "w");
-    if(outputFile)
-    {
-
-    }
-    else
-    {
-        printf("Error opening output file\n");
-        return -1;
-    }
-    fclose(outputFile);
 
     return 0;
 }
