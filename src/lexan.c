@@ -9,7 +9,7 @@ int main(int argumentsCount, char* arguments[])
 {
     ConsoleArguments consoleArguments = readConsole(argumentsCount, arguments);
 
-    // input file
+    // input file. count number of lines
     int numberOfLines = 0;
     FILE* inputFile = fopen(consoleArguments.inputFileName, "r");
     if(inputFile)
@@ -31,6 +31,14 @@ int main(int argumentsCount, char* arguments[])
     
     fclose(inputFile);
 
+    // Create pipes
+    int numberOfBuilders = consoleArguments.numOfBuilders;
+    int builderPipes[numberOfBuilders][2];
+    for (int i = 0; i < numberOfBuilders; i++) 
+    {
+        pipe(builderPipes[i]);
+    }
+
     unsigned USR1 = 0;
     // spawn splitters
     int numberOfSplitters = consoleArguments.numOfSplitters;
@@ -41,14 +49,24 @@ int main(int argumentsCount, char* arguments[])
         pid_t pid = fork();
         if(pid == 0)
         {
+            // We pass all write ends of pipe to our splitters
+            for (int j = 0; j < numberOfBuilders; j++) {
+                close(builderPipes[j][0]);
+                dup2(builderPipes[j][1], j + 3);
+                close(builderPipes[j][1]);
+            }
+
             char numberOfLinesEachSplitterString[20]; // Large enough for most integers
             sprintf(numberOfLinesEachSplitterString, "%d", numberOfLinesEachSplitter);
 
             char startingLineString[20];
             sprintf(startingLineString, "%d", startingLine);
 
+            char numberOfBuildersString[20];
+            sprintf(numberOfBuildersString, "%d", numberOfBuilders);
+
             char* arguments[] = {"./bin/splitter", consoleArguments.inputFileName
-            ,numberOfLinesEachSplitterString, startingLineString, consoleArguments.exclusionListFileName
+            ,numberOfLinesEachSplitterString, startingLineString, consoleArguments.exclusionListFileName,  numberOfBuildersString
             ,NULL};
 
             execv(arguments[0], arguments);
@@ -61,25 +79,49 @@ int main(int argumentsCount, char* arguments[])
         }
     }
 
-    // wait for splitters to finish
-    for(int i = 0; i < numberOfSplitters; i++)
-    {
-        wait(NULL);
-    }
-
     unsigned USR2 = 0;
     // spawn builders
-    int numberOfBuilders = consoleArguments.numOfBuilders;
     for(int i = 0; i < numberOfBuilders; i++)
     {
         pid_t pid = fork();
         if(pid == 0)
         {
+            // We pass all write ends of pipe to our splitters
+            for (int j = 0; j < numberOfBuilders; j++) {
+                close(builderPipes[j][1]);
+                if(j != i)
+                {
+                    // we dont care about other builders
+                    close(builderPipes[j][0]);
+                }
+                else
+                {
+                    dup2(builderPipes[j][0], STDIN_FILENO);
+                    close(builderPipes[j][0]); // Close original read end
+                }
+
+            }
+            char numberOfBuildersString[20];
+            sprintf(numberOfBuildersString, "%d", numberOfBuilders);
+            
             char* arguments[] = {"./bin/builder",NULL};
             execv(arguments[0], arguments);
             perror("did not create builder\n");
             return -1;
         }
+    }
+
+    // After creating all child processes
+    for (int i = 0; i < numberOfBuilders; i++) {
+        close(builderPipes[i][0]); // Close read end
+        close(builderPipes[i][1]); // Close write end
+    }
+
+
+    // wait for splitters to finish
+    for(int i = 0; i < numberOfSplitters; i++)
+    {
+        wait(NULL);
     }
 
     // wait for builders to finish
