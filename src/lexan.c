@@ -2,8 +2,21 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include "../include/ConsoleReader.h"
 #include "../include/Utility.h"
+
+unsigned USR1 = 0;
+void handleUSR1(int sig)
+{
+    USR1++;
+}
+
+unsigned USR2 = 0;
+void handleUSR2(int sig)
+{
+    USR2++;
+}
 
 int main(int argumentsCount, char* arguments[])
 {
@@ -39,7 +52,6 @@ int main(int argumentsCount, char* arguments[])
         pipe(builderPipes[i]);
     }
 
-    unsigned USR1 = 0;
     // spawn splitters
     int numberOfSplitters = consoleArguments.numOfSplitters;
     int numberOfLinesEachSplitter = numberOfLines / numberOfSplitters;
@@ -79,7 +91,12 @@ int main(int argumentsCount, char* arguments[])
         }
     }
 
-    unsigned USR2 = 0;
+    if (signal(SIGUSR1, handleUSR1) == SIG_ERR) {
+        perror("Error setting up SIGUSR1 handler");
+        exit(EXIT_FAILURE);
+    }
+
+
     // spawn builders
     for(int i = 0; i < numberOfBuilders; i++)
     {
@@ -109,6 +126,11 @@ int main(int argumentsCount, char* arguments[])
             perror("did not create builder\n");
             return -1;
         }
+    }
+
+    if (signal(SIGUSR2, handleUSR2) == SIG_ERR) {
+        perror("Error setting up SIGUSR2 handler");
+        exit(EXIT_FAILURE);
     }
 
     // After creating all child processes

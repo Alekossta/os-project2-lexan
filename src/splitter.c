@@ -2,6 +2,9 @@
 #include "Hashtable.h"
 #include <stdlib.h>
 #include <ctype.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #define MAX_LINE_LENGTH 1024
 #define MAX_WORD_LENGTH 256
@@ -112,5 +115,10 @@ int main(int argumentsCount, char* arguments[])
         return -1;
     }
     fclose(inputFile);
+    hashtableFree(exclusionHashTable);
+
+    pid_t parentId = getppid();
+    kill(parentId, SIGUSR1);
+    
     return 0;
 }

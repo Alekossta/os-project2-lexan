@@ -1,7 +1,7 @@
-#include "../include/Hashtable.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "Hashtable.h" // Ensure this header file contains the necessary structure definitions
 
 HashTable* hashtableCreate(unsigned size) {
     HashTable* table = malloc(sizeof(HashTable));
@@ -9,12 +9,20 @@ HashTable* hashtableCreate(unsigned size) {
         fprintf(stderr, "Error allocating memory for hash table\n");
         return NULL;
     }
-    table->buckets = calloc(size, sizeof(HashNode*));
+    
+    // Corrected memory allocation for buckets
+    table->buckets = malloc(sizeof(HashNode*) * size);
     if (!table->buckets) {
         fprintf(stderr, "Error allocating memory for buckets\n");
         free(table);
         return NULL;
     }
+    
+    // Initialize buckets to NULL
+    for (unsigned int i = 0; i < size; i++) {
+        table->buckets[i] = NULL;
+    }
+
     table->size = size;
     return table;
 }
@@ -23,7 +31,7 @@ unsigned int hashtableHash(HashTable* table, const char* key) {
     unsigned long hash = 5381;
     int c;
 
-    while ((c = *key++))
+    while ((c = (unsigned char)*key++))
         hash = ((hash << 5) + hash) + c;
 
     return hash % table->size;
@@ -31,6 +39,18 @@ unsigned int hashtableHash(HashTable* table, const char* key) {
 
 void hashtableInsert(HashTable* table, const char* key, int value) {
     unsigned int index = hashtableHash(table, key);
+
+    HashNode* current = table->buckets[index];
+    while (current) {
+        if (strcmp(current->key, key) == 0) {
+            // Key exists, update the value
+            current->value += value;
+            return;
+        }
+        current = current->next;
+    }
+
+    // Key does not exist, insert a new node
     HashNode* new_node = malloc(sizeof(HashNode));
     if (!new_node) {
         fprintf(stderr, "Error allocating memory for new node\n");
@@ -68,7 +88,7 @@ void hashtableDelete(HashTable* table, const char* key) {
                 table->buckets[index] = node->next;
 
             free(node->key);
-            free(node); // No need to free value as it's an integer
+            free(node);
             printf("Key '%s' deleted successfully.\n", key);
             return;
         }
@@ -79,13 +99,13 @@ void hashtableDelete(HashTable* table, const char* key) {
 }
 
 void hashtableFree(HashTable* table) {
-    for (int i = 0; i < table->size; i++) {
+    for (unsigned int i = 0; i < table->size; i++) {
         HashNode* node = table->buckets[i];
         while (node) {
             HashNode* temp = node;
             node = node->next;
             free(temp->key);
-            free(temp); // No need to free value as it's an integer
+            free(temp);
         }
     }
     free(table->buckets);
@@ -93,22 +113,15 @@ void hashtableFree(HashTable* table) {
 }
 
 void hashtablePrint(HashTable* table) {
-    if (!table) {
-        fprintf(stderr, "HashTable is NULL\n");
-        return;
-    }
-
-    printf("HashTable (size = %u):\n", table->size);
     for (unsigned int i = 0; i < table->size; i++) {
-        printf("Bucket %u: ", i);
         HashNode* current = table->buckets[i];
-        if (!current) {
-            printf("(empty)");
+        if (current) 
+        {
+            while (current) {
+                printf("[Key: %s, Value: %d]", current->key, current->value);
+                current = current->next;
+            }
+            printf("\n");
         }
-        while (current) {
-            printf("-> [Key: %s, Value: %d] ", current->key, current->value);
-            current = current->next;
-        }
-        printf("\n");
     }
 }

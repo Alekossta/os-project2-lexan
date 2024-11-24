@@ -1,15 +1,18 @@
-// builder.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include "Hashtable.h"
 
-#define BUFFER_SIZE 1024  // Adjust as needed
+#define BUFFER_SIZE 1024
 
 int main(int argc, char* argv[]) {
-    char buffer[BUFFER_SIZE];  // Buffer to hold input data
+    char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
     ssize_t total_bytes = 0;
+    HashTable* frequencyTable = hashtableCreate(20000);
 
     while ((bytes_read = read(STDIN_FILENO, buffer + total_bytes, BUFFER_SIZE - total_bytes - 1)) > 0) {
         total_bytes += bytes_read;
@@ -17,12 +20,9 @@ int main(int argc, char* argv[]) {
         ssize_t start = 0;
         for (ssize_t i = 0; i < total_bytes; i++) {
             if (buffer[i] == '\0') {
-                // Null terminator found; process the word
-                buffer[i] = '\0';  // Ensure null termination
-
                 // Process the word from buffer[start] to buffer[i]
-                printf("Builder [%d] received: %s\n", getpid(), buffer + start);
-
+                //printf("Builder [%d] received: %s\n", getpid(), buffer + start);
+                hashtableInsert(frequencyTable, buffer + start, 1);                        
                 // Move 'start' to the next character after the null terminator
                 start = i + 1;
             }
@@ -50,10 +50,11 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Optional: Perform any cleanup or final processing here
+    hashtablePrint(frequencyTable);
+    hashtableFree(frequencyTable);
 
-    // Optionally send a signal to the parent process to indicate completion
-    // kill(getppid(), SIGUSR2);
+    pid_t parentId = getppid();
+    kill(parentId, SIGUSR2);
 
     return 0;
 }
