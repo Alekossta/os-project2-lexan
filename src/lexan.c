@@ -46,10 +46,10 @@ int main(int argumentsCount, char* arguments[])
 
     // Create pipes
     int numberOfBuilders = consoleArguments.numOfBuilders;
-    int builderPipes[numberOfBuilders][2];
+    int splitterBuilderPipes[numberOfBuilders][2];
     for (int i = 0; i < numberOfBuilders; i++) 
     {
-        pipe(builderPipes[i]);
+        pipe(splitterBuilderPipes[i]);
     }
 
     // spawn splitters
@@ -61,14 +61,13 @@ int main(int argumentsCount, char* arguments[])
         pid_t pid = fork();
         if(pid == 0)
         {
-            // We pass all write ends of pipe to our splitters
             for (int j = 0; j < numberOfBuilders; j++) {
-                close(builderPipes[j][0]);
-                dup2(builderPipes[j][1], j + 3);
-                close(builderPipes[j][1]);
+                close(splitterBuilderPipes[j][0]);
+                dup2(splitterBuilderPipes[j][1], j + 3);
+                close(splitterBuilderPipes[j][1]);
             }
 
-            char numberOfLinesEachSplitterString[20]; // Large enough for most integers
+            char numberOfLinesEachSplitterString[20];
             sprintf(numberOfLinesEachSplitterString, "%d", numberOfLinesEachSplitter);
 
             char startingLineString[20];
@@ -96,6 +95,13 @@ int main(int argumentsCount, char* arguments[])
         exit(EXIT_FAILURE);
     }
 
+    // Builder to root pipes
+    int builderRootPipes[numberOfBuilders][2];
+    for (int i = 0; i < numberOfBuilders; i++) 
+    {
+        pipe(builderRootPipes[i]);
+    }
+
 
     // spawn builders
     for(int i = 0; i < numberOfBuilders; i++)
@@ -105,19 +111,35 @@ int main(int argumentsCount, char* arguments[])
         {
             // We pass all write ends of pipe to our splitters
             for (int j = 0; j < numberOfBuilders; j++) {
-                close(builderPipes[j][1]);
+
+                // handle splitter builder pipes
+                close(splitterBuilderPipes[j][1]);
                 if(j != i)
                 {
                     // we dont care about other builders
-                    close(builderPipes[j][0]);
+                    close(splitterBuilderPipes[j][0]);
                 }
                 else
                 {
-                    dup2(builderPipes[j][0], STDIN_FILENO);
-                    close(builderPipes[j][0]); // Close original read end
+                    dup2(splitterBuilderPipes[j][0], STDIN_FILENO);
+                    close(splitterBuilderPipes[j][0]); // Close original read end
                 }
 
+                // handle builder root pipes
+                close(builderRootPipes[j][0]);
+                if(j != i)
+                {
+                    // we dont care about other builders
+                    close(builderRootPipes[j][1]);
+                }
+                else
+                {
+                    dup2(builderRootPipes[j][1], j+3);
+                    close(builderRootPipes[j][1]); // Close original read end
+                }
             }
+
+
             char numberOfBuildersString[20];
             sprintf(numberOfBuildersString, "%d", numberOfBuilders);
             
@@ -135,8 +157,8 @@ int main(int argumentsCount, char* arguments[])
 
     // After creating all child processes
     for (int i = 0; i < numberOfBuilders; i++) {
-        close(builderPipes[i][0]); // Close read end
-        close(builderPipes[i][1]); // Close write end
+        close(splitterBuilderPipes[i][0]); // Close read end
+        close(splitterBuilderPipes[i][1]); // Close write end
     }
 
 
@@ -145,6 +167,8 @@ int main(int argumentsCount, char* arguments[])
     {
         wait(NULL);
     }
+
+    // read data coming from builders
 
     // wait for builders to finish
     for(int i = 0; i < numberOfBuilders; i++)
