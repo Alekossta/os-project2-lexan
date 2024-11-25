@@ -125,3 +125,56 @@ void hashtablePrint(HashTable* table) {
         }
     }
 }
+
+// Comparison function for qsort
+int compareWordFreq(const void* a, const void* b) {
+    WordFreq* wf1 = (WordFreq*)a;
+    WordFreq* wf2 = (WordFreq*)b;
+    // Sort in descending order of frequency
+    return wf2->frequency - wf1->frequency;
+}
+
+void hashtablePrintSorted(HashTable* table) {
+    // Count the total number of entries
+    int totalEntries = 0;
+    for (unsigned int i = 0; i < table->size; i++) {
+        HashNode* node = table->buckets[i];
+        while (node) {
+            totalEntries++;
+            node = node->next;
+        }
+    }
+
+    // Allocate an array to hold all entries
+    WordFreq* entries = malloc(totalEntries * sizeof(WordFreq));
+    if (!entries) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return;
+    }
+
+    // Collect entries into the array
+    int index = 0;
+    for (unsigned int i = 0; i < table->size; i++) {
+        HashNode* node = table->buckets[i];
+        while (node) {
+            entries[index].word = strdup(node->key); // Duplicate the word
+            entries[index].frequency = node->value;
+            index++;
+            node = node->next;
+        }
+    }
+
+    // Sort the array by frequency in descending order
+    qsort(entries, totalEntries, sizeof(WordFreq), compareWordFreq);
+
+    // Print the sorted entries
+    printf("Word Frequencies (sorted):\n");
+    int topk = 10;
+    for (int i = 0; i < topk; i++) {
+        printf("%s: %d\n", entries[i].word, entries[i].frequency);
+        free(entries[i].word); // Free the duplicated word
+    }
+
+    // Free the array
+    free(entries);
+}

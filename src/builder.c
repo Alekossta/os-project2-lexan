@@ -11,37 +11,31 @@
 int main(int argc, char* argv[]) {
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
-    ssize_t total_bytes = 0;
+    ssize_t bufferBytes = 0;
     HashTable* frequencyTable = hashtableCreate(20000);
 
-    while ((bytes_read = read(STDIN_FILENO, buffer + total_bytes, BUFFER_SIZE - total_bytes - 1)) > 0) {
-        total_bytes += bytes_read;
+    // Read words from stdin and build the hashtable
+    while ((bytes_read = read(STDIN_FILENO, buffer + bufferBytes, BUFFER_SIZE - bufferBytes - 1)) > 0) {
+        bufferBytes += bytes_read;
 
         ssize_t start = 0;
-        for (ssize_t i = 0; i < total_bytes; i++) {
+        for (ssize_t i = 0; i < bufferBytes; i++) {
             if (buffer[i] == '\0') {
-                // Process the word from buffer[start] to buffer[i]
-                //printf("Builder [%d] received: %s\n", getpid(), buffer + start);
-                hashtableInsert(frequencyTable, buffer + start, 1);                        
-                // Move 'start' to the next character after the null terminator
+                hashtableInsert(frequencyTable, buffer + start, 1);
                 start = i + 1;
             }
         }
 
-        // Move any remaining data to the beginning of the buffer
-        if (start < total_bytes) {
-            memmove(buffer, buffer + start, total_bytes - start);
-            total_bytes -= start;
+        if (start < bufferBytes) {
+            memmove(buffer, buffer + start, bufferBytes - start);
+            bufferBytes -= start;
         } else {
-            // All data processed
-            total_bytes = 0;
+            bufferBytes = 0;
         }
 
-        // If the buffer is full, but no null terminator was found, handle the error
-        if (total_bytes == BUFFER_SIZE - 1) {
+        if (bufferBytes == BUFFER_SIZE - 1) {
             fprintf(stderr, "Error: Word too long in builder [%d]\n", getpid());
-            // Reset buffer
-            total_bytes = 0;
+            bufferBytes = 0;
         }
     }
 
@@ -50,9 +44,30 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    hashtablePrint(frequencyTable);
-    hashtableFree(frequencyTable);
+    // after getting all the words from the splitter we can now send our data
+    // to the root.
+    // we will pass the words in the format = word frequency\n
+    for(int i = 0; i < frequencyTable->size; i++)
+    {
+        HashNode* currentNode = frequencyTable->buckets[i];
+        while(currentNode)
+        {
+            if(currentNode->key)
+            {
+                char* word = currentNode->key;
+                int frequency = currentNode->value;
+                char message[256];
+                snprintf(message, sizeof(message), "%s %d\n", word, frequency);
+                write(3, message, strlen(message));
+            }
+            currentNode = currentNode->next;
+        }
+    }
 
+    // close the pipe connecting to the root
+    close(3);
+
+    // Notify the root process
     pid_t parentId = getppid();
     kill(parentId, SIGUSR2);
 

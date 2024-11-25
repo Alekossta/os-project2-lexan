@@ -3,15 +3,20 @@
 #include <string.h>
 
 typedef struct HashNode {
-    char* key;              // Key remains a string
-    int value;              // Value is now an integer
-    struct HashNode* next;  // Pointer to the next node for handling collisions
+    char* key;
+    int value;
+    struct HashNode* next;
 } HashNode;
 
 typedef struct HashTable {
-    HashNode** buckets;     // Array of bucket pointers
+    HashNode** buckets; 
     unsigned size;
 } HashTable;
+
+typedef struct {
+    char* word;
+    int frequency;
+} WordFreq;
 
 // Create a new hash table
 HashTable* hashtableCreate(unsigned size);
@@ -33,3 +38,6 @@ void hashtableFree(HashTable* table);
 
 // prints the hash table
 void hashtablePrint(HashTable* table);
+
+// print but sorted
+void hashtablePrintSorted(HashTable* table);
