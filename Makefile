@@ -52,3 +52,5 @@ clean:
 
 run: $(BIN_DIR)/lexan
 	$(BIN_DIR)/lexan -i $(DATA_DIR)/texts/WilliamShakespeareWorks_a.txt -l 50 -m 50 -t 5 -e $(DATA_DIR)/exclusionLists/ExclusionList1_a.txt -o $(DATA_DIR)/output/output.txt
+valgrind: $(BIN_DIR)/lexan
+	valgrind --leak-check=full --track-origins=yes $(BIN_DIR)/lexan -i $(DATA_DIR)/texts/WilliamShakespeareWorks_a.txt -l 50 -m 50 -t 5 -e $(DATA_DIR)/exclusionLists/ExclusionList1_a.txt -o $(DATA_DIR)/output/output.txt

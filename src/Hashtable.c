@@ -174,10 +174,16 @@ void hashtablePrintAndWriteTopK(HashTable* table, int k, char* outputFileName) {
     {
         for(int i = 0; i < k; i++)
         {
-            fprintf(outputFile, "%s: %d\n", entries[i].word, entries[i].frequency);
-            free(entries[i].word);  
+            fprintf(outputFile, "%s: %d\n", entries[i].word, entries[i].frequency); 
         }
     }
+
+    // free all words
+    for(int i = 0; i < totalEntries; i++)
+    {
+        free(entries[i].word);
+    }
+
     fclose(outputFile);
     free(entries);
 }
