@@ -216,8 +216,8 @@ int main(int argumentsCount, char* arguments[])
                     ssize_t bytes_read = read(fds[i].fd, buffer, sizeof(buffer));
                     if(bytes_read > 0)
                     {
-                        // Assume the data format is "word frequency\n"
-                        buffer[bytes_read] = '\0'; // Null-terminate the string
+                        // We assume the data format is "word frequency\n"
+                        buffer[bytes_read] = '\0';
                         char *line = strtok(buffer, "\n");
                         while(line != NULL)
                         {
@@ -254,7 +254,8 @@ int main(int argumentsCount, char* arguments[])
     }
 
     // print the hashtable and free
-    hashtablePrintSorted(rootHashTable);
+    hashtablePrintAndWriteTopK(rootHashTable, consoleArguments.topPopular,
+    consoleArguments.outputFileName);
     hashtableFree(rootHashTable);
 
     // print signals

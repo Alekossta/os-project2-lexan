@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Hashtable.h" // Ensure this header file contains the necessary structure definitions
+#include "Hashtable.h"
 
 HashTable* hashtableCreate(unsigned size) {
     HashTable* table = malloc(sizeof(HashTable));
@@ -9,8 +9,7 @@ HashTable* hashtableCreate(unsigned size) {
         fprintf(stderr, "Error allocating memory for hash table\n");
         return NULL;
     }
-    
-    // Corrected memory allocation for buckets
+
     table->buckets = malloc(sizeof(HashNode*) * size);
     if (!table->buckets) {
         fprintf(stderr, "Error allocating memory for buckets\n");
@@ -18,7 +17,6 @@ HashTable* hashtableCreate(unsigned size) {
         return NULL;
     }
     
-    // Initialize buckets to NULL
     for (unsigned int i = 0; i < size; i++) {
         table->buckets[i] = NULL;
     }
@@ -56,8 +54,8 @@ void hashtableInsert(HashTable* table, const char* key, int value) {
         fprintf(stderr, "Error allocating memory for new node\n");
         return;
     }
-    new_node->key = strdup(key);  // Duplicate the key string
-    new_node->value = value;      // Store the integer value
+    new_node->key = strdup(key);
+    new_node->value = value;
     new_node->next = table->buckets[index];
     table->buckets[index] = new_node;
 }
@@ -68,11 +66,11 @@ int hashtableSearch(HashTable* table, const char* key) {
 
     while (node) {
         if (strcmp(node->key, key) == 0) {
-            return node->value; // Return the integer value
+            return node->value;
         }
         node = node->next;
     }
-    return -1; // Return -1 to indicate not found
+    return -1;
 }
 
 void hashtableDelete(HashTable* table, const char* key) {
@@ -130,12 +128,12 @@ void hashtablePrint(HashTable* table) {
 int compareWordFreq(const void* a, const void* b) {
     WordFreq* wf1 = (WordFreq*)a;
     WordFreq* wf2 = (WordFreq*)b;
-    // Sort in descending order of frequency
     return wf2->frequency - wf1->frequency;
 }
 
-void hashtablePrintSorted(HashTable* table) {
-    // Count the total number of entries
+void hashtablePrintAndWriteTopK(HashTable* table, int k, char* outputFileName) {
+
+    // count entries
     int totalEntries = 0;
     for (unsigned int i = 0; i < table->size; i++) {
         HashNode* node = table->buckets[i];
@@ -145,36 +143,42 @@ void hashtablePrintSorted(HashTable* table) {
         }
     }
 
-    // Allocate an array to hold all entries
+    // allocate wordfreq struct array for all entries
     WordFreq* entries = malloc(totalEntries * sizeof(WordFreq));
     if (!entries) {
         fprintf(stderr, "Memory allocation failed\n");
         return;
     }
 
-    // Collect entries into the array
+    // setup the wordfreq structure for each "node"
     int index = 0;
     for (unsigned int i = 0; i < table->size; i++) {
         HashNode* node = table->buckets[i];
         while (node) {
-            entries[index].word = strdup(node->key); // Duplicate the word
+            entries[index].word = strdup(node->key);
             entries[index].frequency = node->value;
             index++;
             node = node->next;
         }
     }
-
-    // Sort the array by frequency in descending order
+    // sort the wordfreq struct array
     qsort(entries, totalEntries, sizeof(WordFreq), compareWordFreq);
 
-    // Print the sorted entries
-    printf("Word Frequencies (sorted):\n");
-    int topk = 10;
-    for (int i = 0; i < topk; i++) {
+    printf("Top %d words\n", k);
+    for (int i = 0; i < k; i++) {
         printf("%s: %d\n", entries[i].word, entries[i].frequency);
-        free(entries[i].word); // Free the duplicated word
+
     }
 
-    // Free the array
+    FILE* outputFile = fopen(outputFileName, "w");
+    if(outputFile)
+    {
+        for(int i = 0; i < k; i++)
+        {
+            fprintf(outputFile, "%s: %d\n", entries[i].word, entries[i].frequency);
+            free(entries[i].word);  
+        }
+    }
+    fclose(outputFile);
     free(entries);
 }

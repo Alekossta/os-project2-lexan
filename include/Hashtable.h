@@ -39,5 +39,5 @@ void hashtableFree(HashTable* table);
 // prints the hash table
 void hashtablePrint(HashTable* table);
 
-// print but sorted
-void hashtablePrintSorted(HashTable* table);
+// print top k frequencies but sorted
+void hashtablePrintAndWriteTopK(HashTable* table, int k, char* outputFileName);
