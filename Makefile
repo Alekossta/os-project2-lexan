@@ -51,4 +51,4 @@ clean:
 	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/*
 
 run: $(BIN_DIR)/lexan
-	$(BIN_DIR)/lexan -i $(DATA_DIR)/texts/GreatExpectations_a.txt -l 50 -m 50 -t 5 -e $(DATA_DIR)/exclusionLists/ExclusionList1_a.txt -o $(DATA_DIR)/output/output.txt
+	$(BIN_DIR)/lexan -i $(DATA_DIR)/texts/WilliamShakespeareWorks_a.txt -l 50 -m 50 -t 5 -e $(DATA_DIR)/exclusionLists/ExclusionList1_a.txt -o $(DATA_DIR)/output/output.txt

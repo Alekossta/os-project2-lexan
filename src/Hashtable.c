@@ -167,7 +167,6 @@ void hashtablePrintAndWriteTopK(HashTable* table, int k, char* outputFileName) {
     printf("Top %d words\n", k);
     for (int i = 0; i < k; i++) {
         printf("%s: %d\n", entries[i].word, entries[i].frequency);
-
     }
 
     FILE* outputFile = fopen(outputFileName, "w");

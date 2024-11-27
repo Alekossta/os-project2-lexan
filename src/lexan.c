@@ -8,6 +8,7 @@
 #include <sys/select.h>
 #include <poll.h>
 #include <fcntl.h>
+#include <string.h>
 
 unsigned USR1 = 0;
 void handleUSR1(int sig)
@@ -20,6 +21,14 @@ void handleUSR2(int sig)
 {
     USR2++;
 }
+
+#define BUFFER_SIZE 4096
+
+typedef struct {
+    char buffer[BUFFER_SIZE];
+    int buffer_len;
+    int expecting_time_data;
+} BuilderData;
 
 int main(int argumentsCount, char* arguments[])
 {
@@ -136,7 +145,6 @@ int main(int argumentsCount, char* arguments[])
         exit(EXIT_FAILURE);
     }
 
-
     // spawn builders
     for(int i = 0; i < numberOfBuilders; i++)
     {
@@ -173,7 +181,6 @@ int main(int argumentsCount, char* arguments[])
                 }
             }
 
-
             char numberOfBuildersString[20];
             sprintf(numberOfBuildersString, "%d", numberOfBuilders);
             
@@ -202,6 +209,18 @@ int main(int argumentsCount, char* arguments[])
     }
 
     HashTable* rootHashTable = hashtableCreate(20000);
+
+    double builder_cpu_times[numberOfBuilders];
+    double builder_real_times[numberOfBuilders];
+    BuilderData buildersData[numberOfBuilders];
+    for(int i = 0; i < numberOfBuilders; i++)
+    {
+        buildersData[i].buffer_len = 0;
+        buildersData[i].expecting_time_data = 0;
+        builder_cpu_times[i] = 0.0;
+        builder_real_times[i] = 0.0;
+    }
+
     int num_fds = numberOfBuilders;
     while(num_fds > 0)
     {
@@ -212,23 +231,64 @@ int main(int argumentsCount, char* arguments[])
             {
                 if(fds[i].revents & POLLIN)
                 {
-                    char buffer[1024];
-                    ssize_t bytes_read = read(fds[i].fd, buffer, sizeof(buffer));
+                    BuilderData *builder = &buildersData[i];
+
+                    ssize_t bytes_read = read(fds[i].fd, builder->buffer + builder->buffer_len, BUFFER_SIZE - builder->buffer_len - 1);
+
                     if(bytes_read > 0)
                     {
-                        // We assume the data format is "word frequency\n"
-                        buffer[bytes_read] = '\0';
-                        char *line = strtok(buffer, "\n");
-                        while(line != NULL)
+                        builder->buffer_len += bytes_read;
+                        builder->buffer[builder->buffer_len] = '\0';
+
+                        char *line_start = builder->buffer;
+                        char *newline_pos;
+
+                        while((newline_pos = strchr(line_start, '\n')) != NULL)
                         {
-                            char word[256];
-                            int frequency;
-                            if(sscanf(line, "%s %d", word, &frequency) == 2)
+                            *newline_pos = '\0'; // Null-terminate the line
+
+                            char *line = line_start;
+
+                            // Process the line
+                            if(strcmp(line, "__END_OF_DATA__") == 0)
                             {
-                                hashtableInsert(rootHashTable, word, frequency);
+                                builder->expecting_time_data = 1;
                             }
-                            line = strtok(NULL, "\n");
+                            else if(builder->expecting_time_data)
+                            {
+                                double value;
+                                if(sscanf(line, "CPU_TIME %lf", &value) == 1)
+                                {
+                                    builder_cpu_times[i] = value;
+                                }
+                                else if(sscanf(line, "REAL_TIME %lf", &value) == 1)
+                                {
+                                    builder_real_times[i] = value;
+                                }
+                                else
+                                {
+                                    // Unexpected line, ignore or handle error
+                                }
+                            }
+                            else
+                            {
+                                // Process word frequency data
+                                char word[256];
+                                int frequency;
+                                if(sscanf(line, "%s %d", word, &frequency) == 2)
+                                {
+                                    hashtableInsert(rootHashTable, word, frequency);
+                                }
+                            }
+
+                            // Move to next line
+                            line_start = newline_pos + 1;
                         }
+
+                        // Move any remaining data to the beginning of the buffer
+                        int remaining = builder->buffer_len - (line_start - builder->buffer);
+                        memmove(builder->buffer, line_start, remaining);
+                        builder->buffer_len = remaining;
                     }
                     else if(bytes_read == 0)
                     {
@@ -251,6 +311,13 @@ int main(int argumentsCount, char* arguments[])
     for(int i = 0; i < numberOfBuilders; i++)
     {
         wait(NULL);
+    }
+
+    // Print builder time data
+    for(int i = 0; i < numberOfBuilders; i++)
+    {
+        printf("Builder %d: CPU TIME %lf, REAL TIME %lf\n"
+        , i+1, builder_cpu_times[i], builder_real_times[i]);
     }
 
     // print the hashtable and free
