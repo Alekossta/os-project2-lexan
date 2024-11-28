@@ -11,10 +11,8 @@
 #define BUFFER_SIZE 1024
 
 int main(int argc, char* argv[]) {
-    char buffer[BUFFER_SIZE];
-    ssize_t bytes_read;
-    ssize_t bufferBytes = 0;
-    HashTable* frequencyTable = hashtableCreate(20000);
+
+
 
     // Time measurement variables
     struct tms start_times, end_times;
@@ -22,6 +20,11 @@ int main(int argc, char* argv[]) {
     double ticks_per_second = (double)sysconf(_SC_CLK_TCK);
 
     start_clock = (double)times(&start_times);
+    
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_read;
+    ssize_t bufferBytes = 0;
+    HashTable* frequencyTable = hashtableCreate(20000);
 
     // Read words from stdin and build the hashtable
     while ((bytes_read = read(STDIN_FILENO, buffer + bufferBytes, BUFFER_SIZE - bufferBytes - 1)) > 0) {
