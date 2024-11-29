@@ -12,15 +12,13 @@
 
 int main(int argc, char* argv[]) {
 
-
-
     // Time measurement variables
     struct tms start_times, end_times;
     double start_clock, end_clock;
     double ticks_per_second = (double)sysconf(_SC_CLK_TCK);
 
     start_clock = (double)times(&start_times);
-    
+
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
     ssize_t bufferBytes = 0;

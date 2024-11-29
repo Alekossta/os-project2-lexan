@@ -164,9 +164,15 @@ void hashtablePrintAndWriteTopK(HashTable* table, int k, char* outputFileName) {
     // sort the wordfreq struct array
     qsort(entries, totalEntries, sizeof(WordFreq), compareWordFreq);
 
-    printf("Top %d words\n", k);
+    // count total of words
+    int totalWords = 0;
+    for(int i = 0; i < totalEntries; i++)
+    {
+        totalWords += entries[i].frequency;
+    }
+
     for (int i = 0; i < k; i++) {
-        printf("%s: %d\n", entries[i].word, entries[i].frequency);
+        printf("%s: %lf\n", entries[i].word, entries[i].frequency / (double)totalWords);
     }
 
     FILE* outputFile = fopen(outputFileName, "w");

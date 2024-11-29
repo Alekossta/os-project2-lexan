@@ -69,7 +69,6 @@ int main(int argumentsCount, char* arguments[])
         perror("Error setting up SIGUSR1 handler");
         exit(EXIT_FAILURE);
     }
-    // dasdsdas
 
     int numberOfSplitters = consoleArguments.numOfSplitters;
     int numberOfLinesEachSplitter = numberOfLines / numberOfSplitters;
@@ -264,10 +263,6 @@ int main(int argumentsCount, char* arguments[])
                                 else if(sscanf(line, "REAL_TIME %lf", &value) == 1)
                                 {
                                     builder_real_times[i] = value;
-                                }
-                                else
-                                {
-                                    // Unexpected line, ignore or handle error
                                 }
                             }
                             else
