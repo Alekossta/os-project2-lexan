@@ -280,10 +280,11 @@ int main(int argumentsCount, char* arguments[])
                             line_start = newline_pos + 1;
                         }
 
-                        // Move any remaining data to the beginning of the buffer
-                        int remaining = builder->buffer_len - (line_start - builder->buffer);
-                        memmove(builder->buffer, line_start, remaining);
-                        builder->buffer_len = remaining;
+                        // Move any remaining data to the beginning of the buffer in order to handle
+                        // the case where we have read a partial a line (without \n)
+                        int remaining = builder->buffer_len - (line_start - builder->buffer); // remaining number of bytes from line_start to the end of the buffer
+                        memmove(builder->buffer, line_start, remaining); // move the remaining the data to the start of the buffer
+                        builder->buffer_len = remaining; // prepare buffer for next read
                     }
                     else if(bytes_read == 0)
                     {

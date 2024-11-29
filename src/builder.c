@@ -42,16 +42,6 @@ int main(int argc, char* argv[]) {
         } else {
             bufferBytes = 0;
         }
-
-        if (bufferBytes == BUFFER_SIZE - 1) {
-            fprintf(stderr, "Error: Word too long in builder [%d]\n", getpid());
-            bufferBytes = 0;
-        }
-    }
-
-    if (bytes_read == -1) {
-        perror("Error reading from stdin");
-        exit(EXIT_FAILURE);
     }
 
     // After getting all the words from the splitter, send data to the root

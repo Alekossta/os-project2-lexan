@@ -69,7 +69,7 @@ int main(int argumentsCount, char* arguments[])
             int word_index = 0;
 
             for (int i = 0; line[i] != '\0'; i++) {
-                if (isalpha(line[i])) {
+                if (line[i] != ' ') {
                     word[word_index++] = tolower(line[i]);
                     if (word_index >= MAX_WORD_LENGTH - 1) {
                         word[word_index] = '\0';
